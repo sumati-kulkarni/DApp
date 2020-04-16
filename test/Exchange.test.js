@@ -1,4 +1,4 @@
-import {tokens, EVM_REVERT} from './helpers'
+import {tokens, ether, EVM_REVERT, ETHER_ADDRESS} from './helpers'
 
 const Token = artifacts.require("./Token") 
 const Exchange = artifacts.require("./Exchange") 
@@ -37,6 +37,42 @@ contract('Exchange', ([deployer, feeAccount, user1]) => {
 		})	
 	})
 
+	// we cannot issue refund if the ether is sent back to them with smart contract
+	// therefore fallback function 
+	describe('fallback', () => {
+		it('reverts when Ether is sent', async () => {
+			await exchange.sendTransaction({ value: 1, from: user1 }).should.be.rejectedWith(EVM_REVERT)
+		})
+	})
+
+	describe('depositing Ether', async() => {
+		let result
+		let amount
+
+		beforeEach(async () => {
+			amount = ether(1)
+			result = await exchange.depositEther({ from: user1, value: amount})
+		})
+
+		it('tracks the ether deposit', async () => {
+			const balance = await exchange.tokens(ETHER_ADDRESS, user1)
+			balance.toString().should.eq(amount.toString())
+		})
+
+		it('emits a Deposit event', async () => {
+			// console.log(result.logs)
+			const log = result.logs[0]
+			log.event.should.eq('Deposit')
+			const event = log.args
+			// good to have these coz if something is wrong truffle will tell you
+			event.token.should.eq(ETHER_ADDRESS, 'ether address is correct')
+			event.user.should.eq(user1, 'user address is correct')
+			event.amount.toString().should.eq(amount.toString(), 'amount is correct')
+			event.balance.toString().should.equal(amount.toString(), 'balance is correct')
+		})
+
+	})
+
 	describe('depositing tokens', () => {
 
 		let result
@@ -67,8 +103,8 @@ contract('Exchange', ([deployer, feeAccount, user1]) => {
 				// good to have these coz if something is wrong truffle will tell you
 				event.token.should.eq(token.address, 'token address is correct')
 				event.user.should.eq(user1, 'user address is correct')
-				event.amount.toString().should.eq(tokens(10).toString(), 'amount is correct')
-				event.balance.toString().should.equal(tokens(10).toString(), 'balance is correct')
+				event.amount.toString().should.eq(amount.toString(), 'amount is correct')
+				event.balance.toString().should.equal(amount.toString(), 'balance is correct')
 			})
 		})
 		describe('failure', () => {
