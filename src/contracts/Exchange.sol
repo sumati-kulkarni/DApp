@@ -10,7 +10,7 @@
 // [X] Withdraw tokens
 // [X] Check balances
 // [X] Make order
-// [ ] Cancel order
+// [X] Cancel order
 // [ ] Fill order
 // [ ] Charge Fees
 
@@ -37,6 +37,9 @@ contract Exchange {
 	mapping(address => mapping(address => uint256)) public tokens;
 	mapping(uint256 => _Order) public orders;
 
+	// mapping specific for cancelling order
+	mapping(uint256 => bool) public orderCancelled;
+
 	// keep track of orders
 	uint256 public orderCount;
 
@@ -56,6 +59,16 @@ contract Exchange {
 	);
 
 	event Order(
+		uint256 id,
+		address user,
+		address tokenGet, 
+		uint256 amountGet, 
+		address tokenGive, 
+		uint256 amountGive, 
+		uint256 timestamp
+	);
+
+	event Cancel(
 		uint256 id,
 		address user,
 		address tokenGet, 
@@ -148,5 +161,16 @@ contract Exchange {
 		emit Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
 	}
 
+	function cancelOrder(uint256 _id) public {
+		// must be my order and fetch it from my storage
+		// Must be a valid order
+		_Order storage _order = orders[_id];
+
+		require (address(_order.user) == msg.sender);
+		require (_order.id == _id);  // the order must exist
+		
+		orderCancelled[_id] = true;
+		emit Cancel(_order.id, msg.sender, _order.tokenGet, _order.amountGet, _order.tokenGive, _order.amountGive, now);
+	}
 }
 
