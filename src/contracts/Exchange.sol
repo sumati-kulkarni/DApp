@@ -35,13 +35,15 @@ contract Exchange {
 	// first key - all the tokens that has been deposited address, token addresses
 	// second key - address of the user who has deposited the tokens themselves
 	mapping(address => mapping(address => uint256)) public tokens;
+	mapping(uint256 _Order) public orders;
 
 	// Events
 	event Deposit(address token, address user, uint256 amount, uint256 balance);
 	event Withdraw(address token, address user, uint amount, uint balance);
 
 	// solidity allows to create your own data types with struct
-
+	// blockchain contains the order data
+	// model an order
 	struct _Order {
 		uint id;
 		address user; // address of person who made the order
@@ -52,9 +54,6 @@ contract Exchange {
 		uint timestamp;
 	}
 
-	// blockchain contains the order data
-	// model an order
-	// a way to store order
 	// add the order to storage
 
 	constructor(address _feeAccount, uint256 _feePercent) public {
@@ -114,6 +113,15 @@ contract Exchange {
 
 	function balanceOf(address _token, address _user) public view returns (uint256 data) {
 		return tokens[_token][_user];
+	}
+
+	// function to create orders
+	function makeOrder(address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) public {
+		// instantiate struct
+		_id = 1;
+		// time now is mentioned in Epoch Timestamp
+		_order = _Order(_id, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
+
 	}
 }
 
