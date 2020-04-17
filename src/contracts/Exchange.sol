@@ -5,10 +5,10 @@
 // TODO
 // [X] Set the fee account
 // [X] Deposit Ether
-// [ ] Withdraw Ether
+// [X] Withdraw Ether
 // [X] Deposit tokens
-// [ ] Withdraw tokens
-// [ ] Check balances
+// [X] Withdraw tokens
+// [X] Check balances
 // [ ] Make order
 // [ ] Cancel order
 // [ ] Fill order
@@ -38,6 +38,24 @@ contract Exchange {
 
 	// Events
 	event Deposit(address token, address user, uint256 amount, uint256 balance);
+	event Withdraw(address token, address user, uint amount, uint balance);
+
+	// solidity allows to create your own data types with struct
+
+	struct _Order {
+		uint id;
+		address user; // address of person who made the order
+		address tokenGet; // address of token they want to purchase
+		uint amountGet; // amount of tokens they want to get
+		address tokenGive; // address of token they want to give
+		uint amountGive; // amount
+		uint timestamp;
+	}
+
+	// blockchain contains the order data
+	// model an order
+	// a way to store order
+	// add the order to storage
 
 	constructor(address _feeAccount, uint256 _feePercent) public {
 		feeAccount = _feeAccount;
@@ -56,6 +74,16 @@ contract Exchange {
 		emit Deposit(ETHER, msg.sender, msg.value, tokens[ETHER][msg.sender]);
 	}
 
+	function withdrawEther(uint _amount) public {
+		// to check sufficient funds
+		require (tokens[ETHER][msg.sender] >= _amount);
+		
+		tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].sub(_amount);
+		// let the amount go back to the sender
+		msg.sender.transfer(_amount);
+		emit Withdraw(ETHER, msg.sender, _amount, tokens[ETHER][msg.sender]);
+	}
+
 	function depositToken(address _token, uint _amount) public {
 		// TODO: Dont allow Ether Deposits
 		require (_token != ETHER);
@@ -72,6 +100,20 @@ contract Exchange {
 		
 		// emit event
 		emit Deposit(_token, msg.sender, _amount, tokens[_token][msg.sender]);
+	}
+
+
+	function withdrawToken(address _token, uint256 _amount) public {
+		require(_token != ETHER);
+		require(tokens[_token][msg.sender] >= _amount);
+		
+		tokens[_token][msg.sender] = tokens[_token][msg.sender].sub(_amount);
+		require(Token(_token).transfer(msg.sender, _amount));
+		emit Withdraw(_token, msg.sender, _amount, tokens[_token][msg.sender]);
+	}
+
+	function balanceOf(address _token, address _user) public view returns (uint256 data) {
+		return tokens[_token][_user];
 	}
 }
 
