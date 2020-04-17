@@ -9,7 +9,7 @@
 // [X] Deposit tokens
 // [X] Withdraw tokens
 // [X] Check balances
-// [ ] Make order
+// [X] Make order
 // [ ] Cancel order
 // [ ] Fill order
 // [ ] Charge Fees
@@ -24,7 +24,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * The contractName contract does this and that...
  */
 contract Exchange {
-	using SafeMath for uint;
+	using SafeMath for uint256;
 
 	// Variables
 	address public feeAccount; // the account that receives exchange
@@ -35,23 +35,47 @@ contract Exchange {
 	// first key - all the tokens that has been deposited address, token addresses
 	// second key - address of the user who has deposited the tokens themselves
 	mapping(address => mapping(address => uint256)) public tokens;
-	mapping(uint256 _Order) public orders;
+	mapping(uint256 => _Order) public orders;
+
+	// keep track of orders
+	uint256 public orderCount;
 
 	// Events
-	event Deposit(address token, address user, uint256 amount, uint256 balance);
-	event Withdraw(address token, address user, uint amount, uint balance);
+	event Deposit(
+		address token, 
+		address user, 
+		uint256 amount, 
+		uint256 balance
+	);
+
+	event Withdraw(
+		address token, 
+		address user, 
+		uint256 amount, 
+		uint256 balance
+	);
+
+	event Order(
+		uint256 id,
+		address user,
+		address tokenGet, 
+		uint256 amountGet, 
+		address tokenGive, 
+		uint256 amountGive, 
+		uint256 timestamp
+	);
 
 	// solidity allows to create your own data types with struct
 	// blockchain contains the order data
 	// model an order
 	struct _Order {
-		uint id;
+		uint256 id;
 		address user; // address of person who made the order
 		address tokenGet; // address of token they want to purchase
-		uint amountGet; // amount of tokens they want to get
+		uint256 amountGet; // amount of tokens they want to get
 		address tokenGive; // address of token they want to give
-		uint amountGive; // amount
-		uint timestamp;
+		uint256 amountGive; // amount
+		uint256 timestamp;
 	}
 
 	// add the order to storage
@@ -73,7 +97,7 @@ contract Exchange {
 		emit Deposit(ETHER, msg.sender, msg.value, tokens[ETHER][msg.sender]);
 	}
 
-	function withdrawEther(uint _amount) public {
+	function withdrawEther(uint256 _amount) public {
 		// to check sufficient funds
 		require (tokens[ETHER][msg.sender] >= _amount);
 		
@@ -83,7 +107,7 @@ contract Exchange {
 		emit Withdraw(ETHER, msg.sender, _amount, tokens[ETHER][msg.sender]);
 	}
 
-	function depositToken(address _token, uint _amount) public {
+	function depositToken(address _token, uint256 _amount) public {
 		// TODO: Dont allow Ether Deposits
 		require (_token != ETHER);
 		
@@ -118,10 +142,11 @@ contract Exchange {
 	// function to create orders
 	function makeOrder(address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) public {
 		// instantiate struct
-		_id = 1;
+		orderCount = orderCount.add(1);
 		// time now is mentioned in Epoch Timestamp
-		_order = _Order(_id, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
-
+		orders[orderCount] = _Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
+		emit Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, now);
 	}
+
 }
 
